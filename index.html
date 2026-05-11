@@ -746,5 +746,94 @@ function typographStaticTextNodes(){
 }
 document.addEventListener("DOMContentLoaded", typographStaticTextNodes);
 </script>
+
+<script>
+/* Adaptive iframe height for Tilda/GitHub embed */
+(function () {
+  const MESSAGE_TYPE = "editorGameHeight";
+
+  function visible(el) {
+    return !!(el && (el.offsetWidth || el.offsetHeight || el.getClientRects().length));
+  }
+
+  function getContentHeight() {
+    const root = document.querySelector(".game") || document.body;
+    const rect = root.getBoundingClientRect();
+
+    let height = Math.ceil(rect.bottom + window.scrollY);
+
+    /* Fixed transition screens are outside the normal document flow.
+       If one is visible, keep enough height for the centered overlay card. */
+    document.querySelectorAll(".day-transition.visible, .praise-transition.visible").forEach(function (overlay) {
+      const card = overlay.querySelector(".day-transition-card, .praise-card");
+      if (visible(card)) {
+        const cardRect = card.getBoundingClientRect();
+        height = Math.max(height, Math.ceil(cardRect.height + 160));
+      }
+    });
+
+    return Math.max(520, height + 8);
+  }
+
+  let lastHeight = 0;
+  let raf = null;
+
+  function sendHeight() {
+    raf = null;
+    const height = getContentHeight();
+
+    if (Math.abs(height - lastHeight) < 2) return;
+    lastHeight = height;
+
+    window.parent.postMessage({
+      type: MESSAGE_TYPE,
+      height: height
+    }, "*");
+  }
+
+  function scheduleHeightUpdate() {
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(sendHeight);
+
+    /* Recheck after layout/animation/display changes.
+       This is what lets the iframe shrink after closing or changing screens. */
+    [80, 180, 360, 700, 1100].forEach(function (delay) {
+      setTimeout(sendHeight, delay);
+    });
+  }
+
+  window.addEventListener("load", scheduleHeightUpdate);
+  window.addEventListener("resize", scheduleHeightUpdate);
+  window.addEventListener("orientationchange", scheduleHeightUpdate);
+  document.addEventListener("click", scheduleHeightUpdate, true);
+  document.addEventListener("input", scheduleHeightUpdate, true);
+  document.addEventListener("change", scheduleHeightUpdate, true);
+  document.addEventListener("drop", scheduleHeightUpdate, true);
+  document.addEventListener("dragend", scheduleHeightUpdate, true);
+  document.addEventListener("transitionend", scheduleHeightUpdate, true);
+  document.addEventListener("animationend", scheduleHeightUpdate, true);
+
+  if ("MutationObserver" in window) {
+    const observer = new MutationObserver(scheduleHeightUpdate);
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      characterData: true,
+      attributeFilter: ["class", "style", "open", "hidden"]
+    });
+  }
+
+  if ("ResizeObserver" in window) {
+    const resizeObserver = new ResizeObserver(scheduleHeightUpdate);
+    const root = document.querySelector(".game") || document.body;
+    resizeObserver.observe(root);
+  }
+
+  setInterval(scheduleHeightUpdate, 1200);
+  scheduleHeightUpdate();
+})();
+</script>
+
 </body>
 </html>
