@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Международный вестник — редакционный симулятор</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#fbfbfb;--ink:#202020;--muted:#6f6f6f;--accent:#D71C1C;
+      --card:#fff;--shadow:0 12px 35px rgba(0,0,0,.08);--line:#222;
+      --soft:#f3f3f3;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:"Montserrat",Arial,sans-serif}
+    .game{max-width:1180px;margin:0 auto;padding:36px 22px 56px}
+    .intro{min-height:86vh;display:flex;align-items:center;justify-content:center}
+    .intro-card{width:100%;max-width:980px;background:#fff;border:1px solid #222;box-shadow:var(--shadow);overflow:hidden;display:grid;grid-template-columns:.76fr 1.24fr}
+    .intro-side{background:#202020;color:#fff;padding:36px 34px;display:flex;flex-direction:column;justify-content:space-between;min-height:560px}
+    .intro-logo{font-family:"Montserrat",Arial,sans-serif;font-size:34px;line-height:.98;font-weight:700;letter-spacing:-.055em;text-transform:uppercase}
+    .intro-issue{font-size:12px;line-height:1.55;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.68)}
+    .intro-main{padding:42px 46px}
+    h1{font-family:"Montserrat",Arial,sans-serif;font-size:36px;line-height:1.08;margin:0 0 24px;font-weight:700;letter-spacing:-.035em}
+    .intro-card p{font-size:18px;line-height:1.52;margin:0 0 14px}
+    .intro-card .small{color:var(--muted);font-size:14px;line-height:1.55;margin-top:22px;margin-bottom:22px}
+    .rules-title{font-size:13px;text-transform:uppercase;letter-spacing:.09em;font-weight:700;margin:24px 0 10px}
+    .rules{margin:0 0 24px;padding-left:18px;color:#333;font-size:15px;line-height:1.55}
+    button{border:1px solid #222;background:#222;color:#fff;padding:13px 18px;font-family:"Montserrat",Arial,sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:.18s ease}
+    button:hover{transform:translateY(-1px);background:#000}
+    button.secondary{background:#fff;color:#222}
+    button.secondary:hover{background:#f2f2f2}
+    .topbar{display:none;align-items:flex-end;justify-content:space-between;gap:20px;border-bottom:3px double #222;padding-bottom:16px;margin-bottom:18px}
+    .brand{font-family:Georgia,"Times New Roman",serif;font-size:46px;line-height:.95;font-weight:700;letter-spacing:-.055em;text-transform:uppercase}
+    .datebox{text-align:right;font-size:14px;color:#555;line-height:1.45}
+    .datebox strong{display:block;color:#222;text-transform:uppercase;letter-spacing:.08em;font-size:12px;margin-bottom:3px}
+    .round-controls{display:none;align-items:center;justify-content:space-between;gap:14px;margin:0 0 18px}
+    .progress{font-size:14px;color:#555}.hidden-counter{display:none}
+    .workspace{display:none;grid-template-columns:340px 1fr;gap:24px;align-items:start}
+    .incoming{background:#fff;border:1px solid #222;padding:14px;position:relative}
+    .incoming h2{font-size:13px;margin:0 0 12px;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+    .news-card{background:var(--card);border:1px solid #333;padding:12px 12px 10px;margin-bottom:10px;cursor:grab;user-select:none;transition:.16s ease;position:relative}.news-card.enter{opacity:0;transform:translateY(14px) scale(.985);animation:cardIn .42s ease forwards}@keyframes cardIn{to{opacity:1;transform:translateY(0) scale(1)}}
+    .news-card:active{cursor:grabbing}
+    .news-card:hover,.news-card:focus{box-shadow:0 8px 18px rgba(0,0,0,.09);transform:translateY(-1px);outline:2px solid rgba(215,28,28,.25)}.news-card.used{display:none}
+    .tagrow{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#555}
+    .tag{border:1px solid #ddd;padding:2px 5px;background:#fafafa}.tag-content{background:#fafafa;border-color:#ddd;color:#555}
+    .headline{font-family:Georgia,"Times New Roman",serif;font-size:18px;line-height:1.15;font-weight:700;letter-spacing:-.01em}
+    .summary{display:none}
+    .context-panel{position:fixed;z-index:50;width:310px;max-width:calc(100vw - 32px);background:#fff;color:#222;padding:14px;border:1px solid #e1e1e1;box-shadow:0 12px 28px rgba(0,0,0,.12);opacity:0;pointer-events:none;transform:translate(10px,0);transition:opacity .14s ease,transform .14s ease}
+    .context-panel.visible{opacity:1;transform:translate(0,0)}
+    .context-panel:before{content:"";position:absolute;left:-7px;top:18px;width:12px;height:12px;background:#fff;border-left:1px solid #e1e1e1;border-bottom:1px solid #e1e1e1;transform:rotate(45deg)}.context-panel.left-side:before{left:auto;right:-7px;border-left:0;border-bottom:0;border-right:1px solid #e1e1e1;border-top:1px solid #e1e1e1}
+    .context-panel .label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;margin-bottom:8px}
+    .context-panel .ctx-title{font-size:13px;line-height:1.35;font-weight:700;margin-bottom:7px}
+    .context-panel .ctx-text{font-size:12px;line-height:1.48;color:#4b4b4b}
+    .context-panel a{display:inline-block;margin-top:10px;color:#222;text-decoration:none;border-bottom:1px solid #777;font-size:12px;font-weight:700}
+    .mobile-actions{display:none;margin-top:10px;gap:6px;flex-wrap:wrap}
+    .mobile-actions button{font-size:11px;padding:7px 8px;background:#fff;color:#222}
+    .frontpage{background:#fff;border:1px solid #222;padding:18px;min-height:520px}.frontpage.enter{opacity:0;transform:translateY(10px);animation:frontIn .46s ease forwards}@keyframes frontIn{to{opacity:1;transform:translateY(0)}}
+    .paper-name{text-align:center;border-bottom:4px double #222;padding-bottom:10px;margin-bottom:16px}
+    .paper-name .title{font-family:Georgia,"Times New Roman",serif;font-size:44px;font-weight:700;letter-spacing:-.05em;line-height:.95;text-transform:uppercase}
+    .paper-name .meta{font-size:12px;color:#555;margin-top:8px;text-transform:uppercase;letter-spacing:.08em;line-height:1.55}
+    .paper-name .meta span{display:block}
+    .layout{display:grid;grid-template-columns:1.35fr .9fr;gap:16px;min-height:420px}
+    .slot{border:1px dashed #999;background:#fcfcfc;position:relative;padding:12px;transition:.15s ease}
+    .slot.over{background:#fff5f5;border-color:var(--accent)}
+    .slot-label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px;font-weight:700}
+    .slot.main .slot-content .headline{font-size:35px;line-height:1.03;letter-spacing:-.035em}
+    .slot.main .slot-content .tagrow{margin-bottom:12px}
+    .slot.small{min-height:128px}
+    .right-stack{display:grid;grid-template-rows:1fr 1fr 1fr;gap:12px}
+    .placeholder{color:#aaa;font-size:14px;line-height:1.35}
+    .slot .remove{position:absolute;top:8px;right:8px;background:#fff;color:#222;border:1px solid #ccc;width:24px;height:24px;padding:0;font-size:14px;line-height:1;display:none}
+    .slot.filled .remove{display:block}
+    .footer-actions{display:none;justify-content:flex-end;gap:10px;margin-top:18px}
+    .result{display:none;background:#fff;border:1px solid #222;padding:32px;box-shadow:var(--shadow);max-width:980px;margin:30px auto 0}
+    .result .eyebrow{color:var(--accent);font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:10px}
+    .result h2{font-size:44px;line-height:.98;margin:0 0 18px;letter-spacing:-.055em;font-weight:700}
+    .result-lead{font-size:18px;line-height:1.55;max-width:840px;margin:0 0 22px}
+    .profile-card{border-top:1px solid #222;border-bottom:0;padding:18px 0 0;margin:18px 0 18px}.profile-type{font-size:27px;line-height:1.08;letter-spacing:-.025em;color:#222;font-weight:700;margin-bottom:10px}.profile-title{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;margin-bottom:16px}.profile-text{font-size:18px;line-height:1.55;font-weight:400}.why-box{background:transparent;border:0;padding:0;margin-top:14px;font-size:14px;line-height:1.55;color:#444}.why-box strong{display:block;margin-bottom:6px;color:#222}
+    details{border:0;background:transparent;padding:0;margin-top:24px;margin-bottom:28px}
+    summary{cursor:pointer;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:12px;border-top:1px solid #222;padding-top:14px}
+    .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+    .metric{border-top:1px solid #ddd;padding-top:12px;font-size:14px}
+    .metric strong{display:block;font-size:15px;margin-bottom:8px}
+    .metric ul{margin:0;padding-left:18px;line-height:1.55;color:#444}
+    .note{font-size:14px;color:#555;line-height:1.55;margin-top:18px}.day-transition{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(251,251,251,.92);opacity:0;pointer-events:none;transition:opacity .28s ease;cursor:pointer}
+    .day-transition.visible{opacity:1;pointer-events:auto}
+    .day-transition-card{text-align:center;transform:translateY(10px);transition:transform .28s ease}
+    .day-transition.visible .day-transition-card{transform:translateY(0)}
+    .day-transition .day-word{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);font-weight:700;margin-bottom:10px}
+    .day-transition .day-title{font-size:52px;line-height:.98;font-weight:700;letter-spacing:-.055em}
+    .day-transition .day-date{margin-top:12px;font-size:15px;color:#555}.day-transition .day-hint{margin-top:26px;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:#777;font-weight:700}.praise-transition{position:fixed;inset:0;z-index:101;display:flex;align-items:center;justify-content:center;background:rgba(251,251,251,.94);opacity:0;pointer-events:none;transition:opacity .25s ease;cursor:pointer}
+    .praise-transition.visible{opacity:1;pointer-events:auto}
+    .praise-card{max-width:720px;text-align:center;padding:32px}.praise-card button{margin-top:0}
+    .praise-kicker{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);font-weight:700;margin-bottom:12px}
+    .praise-title{font-size:34px;line-height:1.12;letter-spacing:-.025em;font-weight:700;margin-bottom:22px}
+    .praise-text{font-size:17px;line-height:1.55;color:#444;margin:0 auto 34px;max-width:620px}
+    .all-types-panel{display:none;margin-top:18px;border-top:1px solid #222;padding-top:18px}
+    .all-types-panel.visible{display:block}
+    .types-list{margin:12px 0 0;padding-left:20px;line-height:1.65;font-size:15px}
+    .types-list li{margin-bottom:4px}
+    .result-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
+    @media(max-width:900px){
+      .intro-card{grid-template-columns:1fr}.intro-side{min-height:220px}.workspace{grid-template-columns:1fr}.context-panel{position:fixed}
+      .layout{grid-template-columns:1fr}.right-stack{grid-template-rows:auto;grid-template-columns:1fr}
+      .slot.main{min-height:220px}.mobile-actions{display:flex}h1{font-size:40px}
+      .paper-name .title{font-size:34px}.result-grid{grid-template-columns:1fr}
+      .topbar{align-items:flex-start;flex-direction:column}.datebox{text-align:left}
+    }
+  </style>
+</head>
+<body>
+  <main class="game">
+    <section class="intro" id="intro">
+      <div class="intro-card">
+        <div class="intro-side">
+          <div class="intro-logo">Международный<br>вестник</div>
+          <div class="intro-issue"></div>
+        </div>
+        <div class="intro-main">
+          <h1>Что попадает на главную страницу — и почему?</h1>
+          <p>Каждый день редакции по всему миру отвечают на этот вопрос. Теперь это вопрос, на который нужно ответить вам.</p>
+          <p>Вы — редактор. Каждый день ваша редакция получает больше новостей, чем может напечатать. У вас есть входящие новости — публикации о войнах, кризисах и других масштабных событиях, которые однажды в нашем мире выпали на один и тот же день. Ваша задача — отобрать самые значимые инфоповоды и собрать главную страницу издания.</p>
+          <div class="rules-title">Правила</div>
+          <ul class="rules">
+            <li>Главная новость — материал, который, по вашему мнению, требует максимальной огласки среди аудитории.</li>
+            <li>Новости 2, 3 и 4 тоже ранжируются: чем выше материал стоит на странице, тем более значимым его считает редакция.</li>
+            <li>Часть входящих новостей не попадет на главную страницу. Каким будет ваш выбор?</li>
+            <li>Наведите курсор или нажмите на заголовок, чтобы увидеть контекст новости.</li>
+          </ul>
+          <p class="small">Правильных ответов нет, поэтому ошибиться в этой игре нельзя. Играйте до конца, выбирайте с умом или сердцем — и в конце узнаете, кто вы есть.</p>
+          <button id="startBtn">Начать выпуск</button>
+        </div>
+      </div>
+    </section>
+
+    <header class="topbar" id="topbar">
+      <div class="brand">Международный вестник</div>
+      <div class="datebox"><strong>Главная страница</strong><div id="roundDate"></div></div>
+    </header>
+
+    <div class="round-controls" id="roundControls">
+      <div class="progress" id="progress"></div>
+      <div class="progress hidden-counter" id="chosenCount"></div>
+    </div>
+
+    <section class="workspace" id="workspace">
+      <aside class="incoming">
+        <h2>Входящие новости</h2>
+        <div id="cards"></div>
+        <div class="context-panel" id="contextPanel">
+          <div class="label">Дополнительно</div>
+          <div class="ctx-text">Наведите курсор на заголовок, чтобы увидеть краткое объяснение инфоповода из таблицы.</div>
+        </div>
+      </aside>
+
+      <section class="frontpage">
+        <div class="paper-name">
+          <div class="title">Международный вестник</div>
+          <div class="meta" id="paperMeta"></div>
+        </div>
+        <div class="layout">
+          <div class="slot main" data-slot="main">
+            <button class="remove" aria-label="Убрать новость">×</button>
+            <div class="slot-label">Главная новость</div>
+            <div class="slot-content"><div class="placeholder">Перетащите сюда главный материал дня</div></div>
+          </div>
+          <div class="right-stack">
+            <div class="slot small" data-slot="n2">
+              <button class="remove" aria-label="Убрать новость">×</button>
+              <div class="slot-label">Новость 2</div>
+              <div class="slot-content"><div class="placeholder">Второй материал выпуска</div></div>
+            </div>
+            <div class="slot small" data-slot="n3">
+              <button class="remove" aria-label="Убрать новость">×</button>
+              <div class="slot-label">Новость 3</div>
+              <div class="slot-content"><div class="placeholder">Третий материал выпуска</div></div>
+            </div>
+            <div class="slot small" data-slot="n4">
+              <button class="remove" aria-label="Убрать новость">×</button>
+              <div class="slot-label">Новость 4</div>
+              <div class="slot-content"><div class="placeholder">Четвертый материал выпуска</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <div class="footer-actions" id="footerActions">
+      <button class="secondary" id="resetRound">Сбросить день</button>
+      <button class="secondary" id="skipRound">Пропустить день</button>
+      <button id="submitRound">Отправить выпуск</button>
+    </div>
+
+    <section class="result" id="result">
+      <div class="eyebrow">Итоги недели</div>
+      <h2>Какой выпуск вы собрали</h2>
+      <p class="result-lead" id="resultText"></p>
+      <div class="profile-card" id="profileCard"></div>
+      <details>
+        <summary>Показать статистику</summary>
+        <div class="result-grid">
+          <div class="metric"><strong>Чаще всего в главной новости</strong><ul id="mainStats"></ul></div>
+          <div class="metric"><strong>Чаще всего не попадали в выпуск</strong><ul id="excludedStats"></ul></div>
+          <div class="metric"><strong>Самые заметные типы повестки</strong><ul id="tagStats"></ul></div>
+          <div class="metric"><strong>Пропущенные дни</strong><ul id="skippedStats"></ul></div>
+        </div>
+      </details>
+      
+      <div class="result-actions">
+        <button id="restartBtn">Пройти заново</button>
+      </div>
+      <div class="all-types-panel" id="allTypesPanel">
+        <div class="rules-title">Все возможные типажи</div>
+        <ul class="types-list" id="typesGrid"></ul>
+      </div>
+    </section>
+    <div class="day-transition" id="dayTransition">
+      <div class="day-transition-card">
+        <div class="day-word">Редакторская неделя</div>
+        <div class="day-title" id="dayTransitionTitle">День первый</div>
+        <div class="day-date" id="dayTransitionDate"></div>
+        <div class="day-hint">Нажмите, чтобы открыть выпуск</div>
+      </div>
+    </div>
+    <div class="praise-transition" id="praiseTransition">
+      <div class="praise-card">
+        <div class="praise-kicker">Выпуск отправлен</div>
+        <div class="praise-title" id="praiseTitle">Полоса собрана</div>
+        <p class="praise-text" id="praiseText">Редакторский стол пережил ещё один день.</p>
+        <button id="praiseNextBtn">Следующий день</button>
+      </div>
+    </div>
+  </main>
+
+<script>
+const days = [{"date": "15 февраля 2024", "cards": [{"id": "15-февраля-2024-1", "region": "Газа", "type": "восстановление / гуманитарный кризис", "headline": "ООН оценила послевоенное восстановление Газы в $20 млрд", "context": "Для восстановления Газы после войны потребуется новый «план Маршалла», заявили в ООН. При этом, согласно январскому докладу, даже при немедленном прекращении огня экономика Газы сможет вернуться к доконфликтному уровню лишь к концу века.", "source": "Reuters", "url": "", "tags": ["gaza", "institutions", "humanitarian", "economy"]}, {"id": "15-февраля-2024-2", "region": "Газа", "type": "гуманитарные институты", "headline": "Программа помощи Газе оказалась под угрозой из-за нехватки денег", "context": "Ирландия объявила о выделении 20 млн евро и призвала другие страны срочно отменить решение о заморозке финансирования — после того как Израиль обвинил сотрудников агентства в причастности к атаке ХАМАС 7 октября.", "source": "Reuters", "url": "", "tags": ["gaza", "humanitarian", "economy"]}, {"id": "15-февраля-2024-3", "region": "Сахель: Мали / Нигер / Буркина-Фасо", "type": "геополитика / региональный блок", "headline": "Военные власти Сахеля объявили о создании конфедерации и выходе из ЭКОВАС", "context": "Мали, Нигер и Буркина-Фасо продолжают интеграцию на фоне конфликта с ЭКОВАС и Францией и многолетней борьбы с повстанцами, связанными с «Аль-Каидой» и ИГИЛ (обе организации признананы террористическими на территории РФ).", "source": "Reuters", "url": "", "tags": ["africa", "security", "diplomacy"]}, {"id": "15-февраля-2024-4", "region": "ДР Конго", "type": "миротворцы / вооруженный конфликт", "headline": "Двое южноафриканских военных погибли, трое ранены в результате взрыва минометной бомбы в ДРК", "context": "Оппозиция обвинила власти в отправке солдат в зону боевых действий без тяжелого вооружения и должной подготовки для сопротивления повстанцам М23.", "source": "Reuters", "url": "", "tags": ["africa", "security"]}, {"id": "15-февраля-2024-5", "region": "Украина / Россия", "type": "война / удары по тылу", "headline": "Семь человек, включая годовалую девочку, погибли при ракетном ударе ВСУ по Белгороду", "context": "Губернатор Гладков сообщил о 18 госпитализированных, среди которых четверо детей — шестеро пострадавших находятся в тяжелом состоянии, еще четверо, включая двоих детей, будут лечиться в Москве.", "source": "Reuters", "url": "", "tags": ["ukraine_russia", "institutions", "security"]}, {"id": "15-февраля-2024-6", "region": "Украина", "type": "война / воздушные удары", "headline": "Украинская ПВО сбила 13 из 26 российских ракет в утренней атаке", "context": "Силы противовоздушной обороны Украины уничтожили 10 крылатых ракет, одну баллистическую «Искандер» и две ракеты Х-59 в разных регионах страны.", "source": "Reuters", "url": "", "tags": ["ukraine_russia", "security"]}]}, {"date": "15 апреля 2024", "cards": [{"id": "15-апреля-2024-1", "region": "Газа", "type": "гуманитарная помощь / продовольствие", "headline": "В городе Газа впервые за полгода заработала пекарня при поддержке ООН", "context": "Пекарня начала выпускать 14 тысяч буханок хлеба в день — это произошло на фоне предупреждения ООН о неминуемом голоде в северной части анклава, где люди уже вынуждены были есть хлеб с примесью песка.", "source": "Reuters", "url": "", "tags": ["gaza", "institutions", "humanitarian"]}, {"id": "15-апреля-2024-2", "region": "Газа / США", "type": "США / гуманитарная политика", "headline": "Белый дом заявил о резком увеличении гуманитарной помощи для Газы", "context": "Байден увязал дальнейшую поддержку Израиля с защитой гражданских и сотрудников гуманитарных организаций. Это заявление последовало за израильским ударом по конвою «Всемирной центральной кухни», унесшего жизни семи человек.", "source": "Reuters", "url": "", "tags": ["gaza", "us_related", "humanitarian", "security"]}, {"id": "15-апреля-2024-3", "region": "Судан", "type": "война / гуманитарный кризис", "headline": "Год войны в Судане: 25 миллионов человек нуждаются в помощи, страна на грани голода", "context": "Гуманитарную помощь получает лишь каждый десятый из находящихся на грани голода — армия ограничивает доступ, а в районах под контролем RSF помощь грабят. Гуманитарным организациям требуется $2,7 млрд, но собрано менее 6%.", "source": "Reuters", "url": "", "tags": ["africa", "humanitarian", "security"]}, {"id": "15-апреля-2024-4", "region": "Судан / Великобритания", "type": "санкции / финансирование войны", "headline": "Великобритания ввела санкции против трех компаний за финансирование войны в Судане", "context": "«Бизнес, который поддерживает воюющие стороны, должен быть привлечен к ответственности», — заявил глава МИД Великобритании, назвав происходящее в Судане «чудовищными зверствами против гражданских». В феврале Лондон выделил Судану пакет помощи в размере $111 млн.", "source": "Reuters", "url": "", "tags": ["africa", "institutions", "humanitarian", "economy"]}, {"id": "15-апреля-2024-5", "region": "Украина", "type": "война / ПВО / союзники", "headline": "Украина призвала союзников к единству в поддержке ПВО, как при защите Израиля", "context": "«Шахеды в небе Украины звучат так же, как в небе Ближнего Востока», — заявил Зеленский. Он призвал союзников проявить ту же политическую волю, что и при отражении иранской атаки на Израиль, особенно в вопросе поставок систем ПВО.", "source": "Reuters", "url": "", "tags": ["gaza", "ukraine_russia", "security"]}, {"id": "15-апреля-2024-7", "region": "США / Ближний Восток", "type": "США / региональная безопасность", "headline": "США отразили атаку Ирана и Йемена по Израилю", "context": "Более 80 дронов и 6 ракет ликвидированы, включая вооружение, не успевшее покинуть землю — хуситы в Йемене действовали при поддержке Ирана.", "source": "Reuters", "url": "", "tags": ["ukraine_russia", "us_related", "security"]}]}, {"date": "3 августа 2024", "cards": [{"id": "3-августа-2024-1", "region": "Сомали", "type": "Reuters", "headline": "Взрыв на пляже в Могадишо убил 37 мирных жителей", "context": "По меньшей мере 37 мирных жителей погибли и 212 пострадали при взрыве на популярном пляжном ресторане в Могадишо. Один из нападавших взорвал себя, трое других убиты силами безопасности, еще один захвачен живым. Правительство обвиняет исламистскую группировку «аль-Шабаб», связанную с «Аль-Каидой» (признана террористической организацией в РФ). Это самая смертоносная атака в стране с октября 2022 года, когда при взрывах автомобилей погибли не менее 100 человек.", "source": "", "url": "", "tags": ["africa", "humanitarian", "security"]}, {"id": "3-августа-2024-2", "region": "Нигер", "type": "Reuters", "headline": "В Нигере джихадисты захватили двух россиян", "context": "«Группировка победы ислама и мусульман», связанная с «Аль-Каидой» (признана террористической организацией в РФ), опубликовала видео с двумя российскими заложниками. По данным источника Reuters, их взяли около недели назад при посещении золотых приисков в богатом золотом регионе Тиллабери. Российский МИД пока не комментирует ситуацию.", "source": "", "url": "", "tags": ["africa", "ukraine_russia"]}, {"id": "3-августа-2024-3", "region": "Нигерия", "type": "Reuters", "headline": "Полиция Нигерии применила слезоточивый газ против протестующих и задержала десятки человек", "context": "В Абудже полиция применила слезоточивый газ против демонстрантов, пытавшихся пройти к правительственным зданиям, и арестовала десятки человек. Полиция сообщает о семерых погибших за три дня, отрицая свою ответственность, и почти о 700 задержанных. Протесты вспыхнули на фоне резкого роста инфляции после отмены субсидий на бензин и девальвации национальной валюты президентом Болой Тинубу.", "source": "", "url": "", "tags": ["africa"]}, {"id": "3-августа-2024-4", "region": "Газа / Израиль", "type": "Reuters", "headline": "Удар Израиля по школе в Газе убил 15 палестинцев", "context": "В субботу израильский авиаудар поразил школу, где укрывались перемещенные лица, в городе Газа — погибли по меньшей мере 15 человек. За несколько часов до этого два удара на Западном берегу убили девять боевиков, включая местного командира ХАМАС, заявили палестинские группировки. Армия Израиля сообщила, что удары были направлены против ячеек боевиков, готовивших атаки.", "source": "", "url": "", "tags": ["gaza", "security"]}, {"id": "3-августа-2024-5", "region": "Венесуэла", "type": "Reuters", "headline": "Венесуэла протестует против победы Мадуро", "context": "Президент Мадуро заявил, что около 2000 человек были арестованы за «преступления» во время протестов против результатов выборов. Лидер оппозиции Мария Корина Мачадо вышла из укрытия и возглавила марш в Каракасе. По данным правозащитников, в ходе протестов погибли не менее 20 человек.", "source": "", "url": "", "tags": ["security"]}, {"id": "3-августа-2024-6", "region": "Ватикан", "type": "Reuters", "headline": "Ватикан назвал сцену с пародией на «Тайную вечерю» на открытии Олимпиады оскорбительной для христиан", "context": "Ватикан выразил сожаление в связи со сценой на церемонии открытия Олимпийских игр в Париже, которая пародировала картину Леонардо да Винчи «Тайная вечеря». Организаторы Олимпиады принесли извинения, заявив, что не намеревались оскорблять религиозные чувства, а художественный руководитель церемонии объяснил, что сцена была вдохновлена языческим праздником, связанным с историей Олимпийских игр, а не христианским сюжетом.", "source": "", "url": "", "tags": ["other"]}, {"id": "3-августа-2024-7", "region": "Россия / Украина", "type": "Reuters", "headline": "Минобороны РФ сообщило об уничтожении 75 украинских дронов за ночь", "context": "Средствами ПВО перехвачены 75 беспилотников над Ростовской (36), Орловской (17), Курской (8), Белгородской (9), Рязанской (2), Воронежской (1) областями, а также над Азовским морем и Краснодарским краем. В Ростовской области повреждены складские объекты, в Белгородской области загорелся резервуар на нефтебазе, а в Орловской области дроны попали в жилой дом. Жертв и пострадавших в результате атак нет.", "source": "", "url": "", "tags": ["ukraine_russia", "security", "economy"]}]}, {"date": "18 ноября 2024", "cards": [{"id": "18-ноября-2024-1", "region": "Судан / ООН", "type": "Reuters", "headline": "Россия наложила вето на резолюцию ООН о немедленном прекращении огня в Судане", "context": "Великобритания и Сьерра-Леоне внесли в Совбез ООН проект резолюции, требующий немедленного прекращения огня между суданской армией и Силами быстрого реагирования, а также доставки гуманитарной помощи миллионам нуждающихся. Россия наложила вето, Китай и все остальные члены Совбеза проголосовали «за». Зампостпреда России Дмитрий Полянский объяснил вето тем, что ответственность за происходящее в Судане «должно нести исключительно правительство Судана».", "source": "", "url": "", "tags": ["africa", "ukraine_russia", "institutions", "humanitarian", "security", "diplomacy"]}, {"id": "18-ноября-2024-2", "region": "Судан / США", "type": "Reuters", "headline": "Спецпосланник США впервые с начала войны прибыл в Судан для переговоров о прекращении огня и помощи", "context": "Ранее в этом году переговоры при посредничестве США в Женеве не принесли прогресса — армия отказалась в них участвовать, но стороны пообещали улучшить доступ гуманитарной помощи. В Госдепартаменте выразили обеспокоенность ростом числа иностранных акторов, вовлеченных в конфликт: наемники из Сахеля прибывают воевать на стороне RSF, а Россия и Иран играют определенную роль на стороне армии.", "source": "", "url": "", "tags": ["africa", "ukraine_russia", "us_related", "humanitarian", "security", "diplomacy"]}, {"id": "18-ноября-2024-3", "region": "Украина / Россия", "type": "Reuters", "headline": "Российские ПВО сбили 59 украинских дронов за ночь, два из них — на подлёте к Москве", "context": "Мэр Москвы Сергей Собянин сообщил в Telegram, что по предварительным данным, на месте падения обломков нет разрушений и жертв. Губернатор Брянской области Александр Богомаз заявил, что все дроны, запущенные Украиной по региону, уничтожены.", "source": "", "url": "", "tags": ["ukraine_russia", "institutions", "security"]}, {"id": "18-ноября-2024-4", "region": "Газа", "type": "Reuters", "headline": "Удары Израиля по Газе убили 20 палестинцев, в том числе в палатках с перемещенными семьями", "context": "По данным медиков, шесть человек погибли при атаках на палатки с перемещенными семьями: четверо, включая детей, — в лагере Аль-Маваси на побережье (объявлен гуманитарной зоной), двое — во временных укрытиях в Рафахе. Еще один палестинец погиб от огня дрона. Авиаудар по дому в городе Газа убил семь человек и ранил десять.", "source": "", "url": "", "tags": ["gaza", "ukraine_russia", "humanitarian", "security"]}, {"id": "18-ноября-2024-5", "region": "Германия / Китай / Украина", "type": "Reuters", "headline": "Шольц обсудит с Си Цзиньпином поставки товаров двойного назначения на фоне сообщений о китайских дронах для России", "context": "Олаф Шольц заявил журналистам в Рио-де-Жанейро, что на полях G20 поднимет тему товаров двойного назначения с председателем КНР. Ранее Reuters сообщал со ссылкой на источники в европейской разведке, что Россия создала в Китае программу по разработке и производству дальнобойных ударных дронов.", "source": "", "url": "", "tags": ["ukraine_russia", "institutions", "security", "diplomacy"]}, {"id": "18-ноября-2024-6", "region": "Азия / США / Филиппины", "type": "международная новость", "headline": "Филиппины и США подписали соглашение о военном обмене разведданными", "context": "Соглашение позволяет Филиппинам получать от США секретную военную информацию. Китай заявил, что военные соглашения не должны нарушать мир в регионе. В Пекине призвали США и Филиппины к «стратегической самостоятельности».", "source": "", "url": "", "tags": ["us_related", "diplomacy"]}, {"id": "18-ноября-2024-7", "region": "ДР Конго", "type": "международная новость", "headline": "Пластик оставляет восток Конго без электричества", "context": "Масса пластиковых отходов заблокировала турбины крупной гидроэлектростанции на востоке ДР Конго, что привело к перебоям с электричеством.", "source": "", "url": "", "tags": ["africa", "economy"]}]}, {"date": "29 января 2025", "cards": [{"id": "29-января-2025-1", "region": "ДР Конго / США / Руанда", "type": "Reuters", "headline": "Госсекретарь США Рубио призвал президента Руанды к прекращению огня в Конго", "context": "Рубио заявил, что США «глубоко обеспокоены» эскалацией конфликта в восточной части ДРК, особенно захватом города Гома повстанцами M23, которых поддерживает Руанда. Госсекретарь потребовал немедленного прекращения огня и уважения территориальной целостности страны.", "source": "", "url": "", "tags": ["africa", "us_related", "security"]}, {"id": "29-января-2025-2", "region": "ДР Конго / Руанда", "type": "Reuters", "headline": "Руанда призвала к прекращению огня в Конго и переговорам с повстанцами M23", "context": "Глава МИД Руанды заявил, что после падения города Гома у президента Конго «нет иного выбора», кроме переговоров с повстанцами. Руанда отрицает участие своих войск в конфликте, хотя ООН, США, Великобритания, Франция и ДР Конго обвиняют ее в поддержке M23.", "source": "", "url": "", "tags": ["africa", "us_related", "institutions", "security", "diplomacy"]}, {"id": "29-января-2025-3", "region": "Газа / США", "type": "Reuters", "headline": "Спецпосланник США Уиткофф посетил Газу и встретился с Нетаньяху", "context": "Уиткофф находится в регионе, чтобы следить за выполнением соглашения о прекращении огня в Газе. Также американский посланник посетил Саудовскую Аравию — президент Трамп надеется расширить сделку и добиться нормализации отношений между Израилем и Эр-Риядом. В четверг ожидается освобождение еще трех израильских заложников.", "source": "", "url": "", "tags": ["africa", "gaza", "us_related", "diplomacy"]}, {"id": "29-января-2025-4", "region": "Украина / Россия", "type": "Reuters", "headline": "Дроны Украины ударили по нефтяной насосной станции и складу ракет в России", "context": "По данным украинской разведки, атака вызвала пожар и утечку нефтепродуктов на станции «Андреаполь», а также серию взрывов на складе ракет в Тверской области. В «Транснефти» заявили, что повреждения ограниченные и перебоев в работе нет. Украина усилила удары дронов по энергообъектам России накануне третьей годовщины конфликта.", "source": "", "url": "", "tags": ["ukraine_russia", "security", "economy"]}, {"id": "29-января-2025-5", "region": "Украина / Россия", "type": "Reuters", "headline": "Курдская милиция заявила о 14 погибших при атаках протурецких сил в Сирии", "context": "По данным курдских сил, среди погибших — двое детей. Атаки на рынок и обстрелы деревень произошли в понедельник и вторник. Турция отрицает гибель мирных жителей, называя заявления курдов «дезинформацией» и сообщая об уничтожении 27 курдских боевиков.", "source": "", "url": "", "tags": ["ukraine_russia", "humanitarian", "security"]}, {"id": "29-января-2025-6", "region": "Китай / США", "type": "Reuters", "headline": "Кандидат на пост главы Минторга США обвинил DeepSeek в использовании украденных технологий и американских чипов", "context": "Говард Латник заявил, что китайская DeepSeek создала мощную модель ИИ «дешево» за счет краденых технологий США и передовых американских полупроводников. Он пообещал решить эту проблему и призвал установить «мягкие» глобальные стандарты в сфере ИИ, чтобы США сохранили лидерство.", "source": "", "url": "", "tags": ["us_related", "diplomacy"]}, {"id": "29-января-2025-7", "region": "Дания / Гренландия / ЕС", "type": "Reuters", "headline": "Глава Евросовета назвал суверенитет Дании «важнейшим вопросом» для ЕС", "context": "Антониу Кошта прокомментировал заявления Трампа о желании заполучить Гренландию. Евросоюз не ведет переговоров по острову, заявила глава евродипломатии Кая Каллас. Ранее Трамп не исключил использования военной или экономической силы для достижения цели. Дания и Гренландия ответили, что остров не продается.", "source": "", "url": "", "tags": ["us_related", "institutions", "economy", "diplomacy"]}]}, {"date": "25 апреля 2026", "cards": [{"id": "25-апреля-2026-1", "region": "Россия / Мали", "type": "Reuters", "headline": "Российские войска отступили в Мали после атак джихадистов и сепаратистов", "context": "В субботу боевики, связанные с «Аль-Каидой» (признана террористической организацией на территории РФ), и сепаратисты-туареги одновременно атаковали несколько объектов по всей стране. Погиб министр обороны Мали, пострадал аэропорт столицы, а российские военные были вынуждены отступить из города. Разные группировки впервые смогли скоординировать свои действия и нанести удар по центру военного правительства.", "source": "", "url": "", "tags": ["africa", "ukraine_russia", "security"]}, {"id": "25-апреля-2026-2", "region": "Украина / Россия", "type": "Reuters", "headline": "Украинский дрон впервые ударил по Екатеринбургу", "context": "Губернатор Свердловской области сообщил, что беспилотник попал в многоэтажный жилой дом в центре города. Жертв нет, одна женщина госпитализирована, жильцы эвакуированы. Это первый удар по Екатеринбургу с начала конфликта.", "source": "", "url": "", "tags": ["ukraine_russia", "institutions", "security"]}, {"id": "25-апреля-2026-3", "region": "Япония", "type": "Reuters", "headline": "Пожарные на севере Японии четвертые сутки борются с лесными пожарами — эвакуированы более 3000 человек", "context": "Власти эвакуировали более 3200 человек — около трети населения города. Ситуацию осложняют холмистая местность, сухая погода и ветер, а дождей не ожидается как минимум неделю. Город Оцути до сих пор помнит трагедию 2011 года, когда землетрясение и цунами унесли почти десятую часть его жителей.", "source": "", "url": "", "tags": ["other"]}, {"id": "25-апреля-2026-4", "region": "Тунис", "type": "Reuters", "headline": "Тунис приостановил работу Нобелевских лауреатов-правозащитников", "context": "Власти Туниса приостановили деятельность Лиги прав человека на один месяц. В Лиге заявили, что это часть «растущего системного подавления гражданского общества и независимых голосов». Президент Каис Саид, захвативший дополнительные полномочия в 2021 году, отрицает обвинения в авторитаризме.", "source": "", "url": "", "tags": ["africa"]}, {"id": "25-апреля-2026-5", "region": "Иран/ Израиль", "type": "Reuters", "headline": "Иран казнил агента, работавшего на израильскую разведку", "context": "Агентство Tasnim сообщило, что Эрфан Киани был повешен утром в субботу после утверждения приговора Верховным судом. Казнь связана с обвинениями в работе на израильскую разведку и участии в беспорядках во время общенациональных протестов в этом году.", "source": "", "url": "", "tags": ["gaza"]}, {"id": "25-апреля-2026-6", "region": "Судан", "type": "Sudan Tribune", "headline": "Семь мирных жителей погибли при ударах дронов по суданскому городу Эль-Обейд", "context": "По меньшей мере семь гражданских лиц погибли и 22 получили ранения в субботу в результате ударов беспилотников по городу Эль-Обейд — столице штата Северный Кордофан. Суданская сеть врачей назвала атаку «преднамеренной» и заявила, что дроны-камикадзе целились именно в густонаселенные районы, а не в военные объекты.", "source": "", "url": "", "tags": ["africa", "ukraine_russia", "humanitarian", "security"]}, {"id": "25-апреля-2026-7", "region": "Сомали / США", "type": "AFRICOM", "headline": "США нанесли авиаудары по боевикам ИГ* в Сомали", "context": "Африканское командование США при координации с федеральным правительством Сомали провело авиаудары по позициям группировки «Исламское государство» (признано террористической организацией на территории РФ) в Сомали.", "source": "", "url": "", "tags": ["africa", "us_related", "security"]}]}, {"date": "8 мая 2026", "cards": [{"id": "8-мая-1", "region": "Сомали", "type": "Reuters", "headline": "Всемирная продовольственная программа предупредила о кризисе недоедания в Сомали — 6 млн человек на грани голода", "context": "Около 6 млн жителей Сомали (почти каждый третий) сталкиваются с острым голодом, а 1,9 млн детей остро недоедают, сообщает Всемирная продовольственная программа ООН. Ситуация напоминает 2022 год, когда страна была на грани голода, но теперь у гуманитарных организаций нет средств для масштабного реагирования. ВПП уже пришлось сократить число людей, получающих помощь, с 2 млн до 500 тыс. Причинами кризиса называют засуху, конфликты, сокращение иностранной помощи и перебои с поставками продовольствия из-за войны на Ближнем Востоке.", "source": "", "url": "", "tags": ["africa", "institutions", "humanitarian"]}, {"id": "8-мая-2", "region": "ДР Конго", "type": "Reuters", "headline": "Боевики, связанные с ИГ*, атаковали деревни на востоке Конго — погибли 40 человек", "context": "По меньшей мере 40 человек погибли в результате атак боевиков из группировки «Союзные демократические силы» на деревни на востоке Конго недалеко от границы с Угандой. Местные активисты опасаются, что число жертв может вырасти, так как несколько жителей числятся пропавшими без вести. «Союзные демократические силы», присягнувшие на верность «Исламскому государству» (признано террористической организацией в РФ) в 2019 году, известна регулярными нападениями на мирных жителей.", "source": "", "url": "", "tags": ["africa", "humanitarian", "security"]}, {"id": "8-мая-3", "region": "Украина / Россия", "type": "Reuters", "headline": "Россия и Украина обвинили друг друга в нарушении перемирия на фоне подготовки парада Победы в Москве", "context": "Россия и Украина обвинили друг друга в нарушении прекращения огня в пятницу, когда Москва готовится к параду Победы. Президент России объявил одностороннее двухдневное перемирие на 8 и 9 мая в честь 81-й годовщины победы над нацистской Германией. Однако, по данным сторон, боевые действия продолжились: Россия сообщает об атаках на свои регионы и Москву, Украина — об ударах по своим позициям.", "source": "", "url": "", "tags": ["ukraine_russia", "security"]}, {"id": "8-мая-4", "region": "Украина", "type": "Reuters", "headline": "Украина заявила о нехватке ракет для ПВО", "context": "Украина столкнулась с острой нехваткой ракет для противовоздушной обороны, заявил представитель ВВС Юрий Игнат. По его словам, пусковые установки некоторых подразделений «наполовину пусты. Украина остается критически зависимой от иностранных систем ПВО, но поставки задерживаются из-за того, что те же системы активно используются в конфликте США и Израиля с Ираном.", "source": "", "url": "", "tags": ["ukraine_russia", "us_related", "security"]}, {"id": "8-мая-5", "region": "Франция / Кения", "type": "Reuters", "headline": "После череды военных переворотов и высылки французских войск Париж перезагружает отношения с Африкой", "context": "Потеряв влияние в своих бывших колониях в Западной Африке, Франция попытается укрепить связи с остальной частью континента на саммите в Найроби — впервые в англоязычной стране. Президент Эмманюэль Макрон, которому остался год у власти, намерен представить «обновленное партнерство» с Африкой. Саммит проходит на фоне череды переворотов в регионе Сахеля, где новые военные правительства выслали французские войска и пригласили российских солдат. В июле Франция также лишилась последней крупной военной базы в Сенегале.", "source": "", "url": "", "tags": ["africa", "ukraine_russia", "security", "diplomacy"]}, {"id": "8-мая-6", "region": "Россия / Украина / Израиль", "type": "Reuters", "headline": "Россия назвала «абсурдными» претензии Украины о краже зерна в споре с Израилем", "context": "Россия обвинила израильские власти в том, что они поддались давлению Украины в споре о партии зерна, которую в прошлом месяце не пустили в порт. Украина утверждает, что зерно было украдено Россией с новых территорий. МИД РФ назвал обвинения Украины «абсурдными и необоснованными» и заявил, что сожалеет о решении израильской компании. В Москве подчеркнули, что этот шаг противоречит экономическому сотрудничеству и угрожает продовольственной безопасности самого Израиля.", "source": "", "url": "", "tags": ["gaza", "ukraine_russia", "humanitarian", "economy"]}, {"id": "8-мая-7", "region": "Польша / ЕС", "type": "Reuters", "headline": "Польша первой среди стран ЕС подписала кредитное соглашение в рамках оборонной инициативы", "context": "Польша стала первой страной Евросоюза, подписавшей кредитное соглашение в рамках инициативы ЕС по укреплению оборонного потенциала на фоне угроз со стороны России и Беларуси. Сумма кредита составляет €43,7 млрд. Премьер-министр Дональд Туск назвал это «поворотным моментом» для Польши и ЕС. Деньги пойдут на оборонную промышленность и технологии. Соглашение было подписано вопреки вето президента. Польша планирует потратить 4,8% ВВП на оборону в 2026 году, оставаясь крупнейшим в Европе военным спонсором по доле от экономики.", "source": "", "url": "", "tags": ["ukraine_russia", "institutions", "economy", "diplomacy"]}]}];
+const resultTypes = {"recognizable_wars": {"title": "Редакция узнаваемых войн", "type": "редактор Большой Игры", "text": "Он может объяснить позицию «коллективного Запада» по любому конфликту — но иногда путает, в какой стране находится Дарфур. Его карта мира абсолютно точная. Просто некоторые континенты на ней мельче, чем другие."}, "global_south": {"title": "Редакция торжества Глобального Юга", "type": "редактор, который был в Африке", "text": "Один раз съездил в командировку в Африку — и теперь смотрит на повестку иначе. Не делает вид, что южнее Сахары нет жизни, о которой можно рассказать. Он знает, что «региональный конфликт» — это просто конфликт, о котором меньше говорят."}, "humanitarian": {"title": "Редакция гуманитарной катастрофы", "type": "редактор с отчетом ООН на столе", "text": "Первым делом он открывает не военную сводку, а последний доклад Всемирной продовольственной программы. Его интересует не кто наступает, а сколько людей не поели вчера. Коллеги иногда говорят, что он слишком мрачный. Он считает, что коллеги слишком привыкли к цифрам. А ведь за ними — страдающие люди. Как о них не написать?"}, "security": {"title": "Редакция силовой политики", "type": "редактор Передовой", "text": "Его выпуск звучит как сводка с фронта. Четкий, жесткий, без лишней мишуры. Что было до и что будет после — это уже аналитика. А аналитика у издания на другой странице."}, "geopolitics": {"title": "Редакция большой геополитики", "type": "прирожденный аналитик", "text": "Он объяснит вам роль Руанды в ДР Конго и позицию Пекина по Судану за одну минуту. Его выпуск — это карта влияния: кто давит, кто торгуется, кто вмешивается. Он знает, кто за кем стоит в каждом конфликте. Внешние игроки, скрытые интересы, цепочки влияния. Гражданские в этой картине мира тоже есть. Обычно в строчке «сопутствующие потери»."}, "bottom_up": {"title": "Редакция снизу", "type": "редактор, который читает письма читателей", "text": "Он не забывает, что за каждой новостью — чья-то жизнь. Его главная страница показывает конфликт через людей, а не только через армии. Иногда ему говорят, что это «слишком эмоционально». Он считает, что остальные просто слишком привыкли к абстракциям."}, "priorities": {"title": "Редакция приоритетов", "type": "добросовестный редактор с перегруженным столом", "text": "Он не игнорирует Африку намеренно. Просто Украина снова в заголовках, Газа снова в заголовках, и времени на объяснение событий в Сахеле уже не остается. Он знает, что это проблема. Или нет?"}, "washington": {"title": "Редакция с курсом на Вашингтон", "type": "редактор, который прописался в Белом доме", "text": "Каждое утро он просыпается с мыслями о Вашингтоне. Он искренне интересуется всеми конфликтами мира. Но почему-то чаще всего в топ залетают новости, в которых засветился Белый дом. Совпадение, наверное. Иногда он ловит себя на мысли, что ждет заявления Трампа, чтобы понять, важна ли новость. Хотя эта мысль его немного беспокоит."}, "institutions": {"title": "Редакция институтов", "type": "редактор Резолюции", "text": "Его выпуск написан на языке международных организаций. Он верит, что события становятся настоящими, когда вокруг них появляются резолюции, осуждение или серьезная обеспокоенность. Его любимый жанр — заявление. Он собирает их как марки: аккуратно и методично. Что происходит после заявления — это уже проблема следующего выпуска. Обычно там еще одно заявление..."}, "breaking": {"title": "Редакция срочной ленты", "type": "редактор-молния", "text": "Его телефон вибрирует каждую минуту. Удар, погибшие, атака, заявление. Он работает быстро и точно. Он не игнорирует медленные кризисы. Он просто не успевает до них добраться. Пока он дочитывает доклад о продовольственной безопасности в Сомали, у него уже семь непрочитанных сообщений про удары. Его выпуск всегда актуальный, всегда срочный, всегда сегодняшний. Беда в том, что некоторые катастрофы не случаются — они просто продолжаются. А «продолжается» — это не новость."}, "long_crises": {"title": "Редакция долгих кризисов", "type": "редактор, который помнит, о чем писал на прошлой неделе", "text": "Он не забывает, что написал на прошлой неделе. Его интересуют не вспышки — а то, что тлеет месяцами или даже годами. Финансирование помощи, восстановление, голод, санкции. Коллеги иногда говорят, что его полоса «скучная». Он считает, что они просто не умеют читать медленные новости."}, "balanced": {"title": "Сбалансированный международный выпуск", "type": "редактор, у которого болит голова", "text": "Он единственный в редакции, кто читает все входящие. Все. Это видно по глазам. Он не выбрал специализацию — и это его крест и гордость. Украина, Сахель, дипломатия, гуманитарка — всё важно. Можно ли удержать целое, не пожертвовав ничем? Наверное, нет. Но он всё равно пытается."}};
+const tagLabels = {"africa": "африканская повестка", "gaza": "Газа и палестино-израильский конфликт", "ukraine_russia": "Украина / Россия", "us_related": "сюжеты с участием США", "institutions": "международные институты", "humanitarian": "гуманитарная повестка", "security": "безопасность и военная динамика", "economy": "экономика и ресурсы", "diplomacy": "дипломатия и международные отношения", "other": "прочие сюжеты"};
+const slotWeights = {main:4,n2:3,n3:2,n4:1};
+
+function getDisplayTag(card){
+  const text = `${card.region || ""} ${card.type || ""} ${card.headline || ""} ${card.context || ""}`.toLowerCase();
+
+  if(text.includes("судан")) return "Судан";
+  if(text.includes("сомали")) return "Сомали";
+  if(text.includes("др конго") || text.includes("конго")) return "ДР Конго";
+  if(text.includes("мали") || text.includes("нигер") || text.includes("буркина") || text.includes("сахель")) return "Сахель";
+  if(text.includes("газа") || text.includes("палестин") || text.includes("израил") || text.includes("хамас")) return "Газа";
+  if(text.includes("украин") || text.includes("росси") || text.includes("белгород") || text.includes("москв") || text.includes("пво") || text.includes("дрон")) return "Украина и Россия";
+  if(text.includes("сша") || text.includes("байден") || text.includes("трамп") || text.includes("белый дом") || text.includes("рубио")) return "США";
+  if(text.includes("оон") || text.includes("совбез") || text.includes("евросоюз") || text.includes(" ес ") || text.includes("нато") || text.includes("польша")) return "Международные институты";
+  if(text.includes("япон") || text.includes("китай") || text.includes("филиппин")) return "Азия";
+  if(text.includes("венесуэл")) return "Латинская Америка";
+  if(text.includes("ватикан")) return "Европа";
+  if(text.includes("тунис") || text.includes("кения") || text.includes("нигерия")) return "Африка";
+  return "Мир";
+}
+
+function getContentTag(card){
+  const text = `${card.region || ""} ${card.type || ""} ${card.headline || ""} ${card.context || ""}`.toLowerCase();
+
+  if(text.includes("голод") || text.includes("недоед") || text.includes("помощ") || text.includes("пекар") || text.includes("продоволь") || text.includes("бежен") || text.includes("гуманитар")) return "Помощь";
+  if(text.includes("погибли") || text.includes("убил") || text.includes("жертв") || text.includes("мирных жителей") || text.includes("гражданских")) return "Гражданские";
+  if(text.includes("атака") || text.includes("удар") || text.includes("дрон") || text.includes("ракет") || text.includes("пво") || text.includes("боевик") || text.includes("повстан") || text.includes("арм") || text.includes("операц")) return "Эскалация";
+  if(text.includes("перемир") || text.includes("прекращени") || text.includes("переговор") || text.includes("саммит") || text.includes("соглашен") || text.includes("отношен") || text.includes("резолюц") || text.includes("совбез")) return "Дипломатия";
+  if(text.includes("санкц") || text.includes("кредит") || text.includes("банк") || text.includes("финанс") || text.includes("деньг") || text.includes("стоимость") || text.includes("эконом") || text.includes("зерн") || text.includes("неф") || text.includes("электрич")) return "Экономика";
+  if(text.includes("права человека") || text.includes("правозащит") || text.includes("лига") || text.includes("казнил") || text.includes("расследован")) return "Права";
+  if(text.includes("выбор") || text.includes("протест") || text.includes("власти") || text.includes("правительство") || text.includes("мадуро")) return "Политика";
+  if(text.includes("конфедерац") || text.includes("эковас") || text.includes("альянс") || text.includes("суверенитет")) return "Регион";
+  if(text.includes("лесн") || text.includes("пожар") || text.includes("эвакуир")) return "Экология";
+  return "Мир";
+}
+
+days.forEach(day => {
+  day.cards.forEach(card => {
+    card.displayTag = getDisplayTag(card);
+    card.contentTag = getContentTag(card);
+  });
+});
+let currentDay=0, placements={}, history=[], skippedDays=[], draggedId=null;
+const praiseMessages=[
+  {title:"Читатели получили свой выпуск.", text:""},
+  {title:"Выбор был непростой, но вы справились!", text:""},
+  {title:"Кто-то пропустил этот день. Вы — нет.", text:""},
+  {title:"Выпуск ушел в печать. До завтра!", text:""},
+  {title:"Вы пережили очередной день.", text:""},
+  {title:"Руководство довольно вашей работоспособностью.", text:""},
+  {title:"Ура, ваша смена закончилась!", text:""}
+];
+const dayNames=["первый","второй","третий","четвертый","пятый","шестой","седьмой","восьмой","девятый","десятый"];
+let pendingDayTransition = null;
+
+const intro=document.getElementById("intro"), topbar=document.getElementById("topbar"),
+roundControls=document.getElementById("roundControls"), workspace=document.getElementById("workspace"),
+footerActions=document.getElementById("footerActions"), cardsEl=document.getElementById("cards"),
+roundDate=document.getElementById("roundDate"), progress=document.getElementById("progress"),
+chosenCount=document.getElementById("chosenCount"), paperMeta=document.getElementById("paperMeta"),
+contextPanel=document.getElementById("contextPanel"), dayTransition=document.getElementById("dayTransition"), dayTransitionTitle=document.getElementById("dayTransitionTitle"), dayTransitionDate=document.getElementById("dayTransitionDate"), praiseTransition=document.getElementById("praiseTransition"), praiseTitle=document.getElementById("praiseTitle"), praiseText=document.getElementById("praiseText");
+
+document.getElementById("startBtn").addEventListener("click",startGame);
+document.getElementById("resetRound").addEventListener("click",()=>renderDay());
+document.getElementById("skipRound").addEventListener("click",skipRound);
+document.getElementById("submitRound").addEventListener("click",submitRound);
+document.getElementById("restartBtn").addEventListener("click",()=>location.reload());
+const showTypesBtn = document.getElementById("showTypesBtn");
+if(showTypesBtn) showTypesBtn.addEventListener("click",toggleAllTypes);
+dayTransition.addEventListener("click",finishDayTransition);
+document.getElementById("praiseNextBtn").addEventListener("click",finishPraiseTransition);
+praiseTransition.addEventListener("click",(e)=>{if(e.target===praiseTransition)finishPraiseTransition();});
+
+function startGame(){
+  intro.style.display="none"; topbar.style.display="flex"; roundControls.style.display="flex";
+  workspace.style.display="grid"; footerActions.style.display="flex";
+  showDayTransition(()=>renderDay());
+}
+
+function showDayTransition(after){
+  const day = days[currentDay];
+  pendingDayTransition = after;
+  dayTransitionTitle.textContent = `День ${dayNames[currentDay] || (currentDay+1)}`;
+  dayTransitionDate.textContent = day ? day.date : "";
+  dayTransition.classList.add("visible");
+}
+
+function finishDayTransition(){
+  if(!dayTransition.classList.contains("visible")) return;
+  const callback = pendingDayTransition;
+  pendingDayTransition = null;
+  if(typeof callback === "function") callback();
+  setTimeout(()=>{
+    dayTransition.classList.remove("visible");
+  }, 120);
+}
+
+function renderDay(){
+  placements={};
+  const day=days[currentDay];
+  roundDate.textContent=day.date;
+  progress.textContent=`День ${currentDay+1} из ${days.length}`;
+  paperMeta.innerHTML=`<span>Главная страница</span><span>${day.date}</span>`;
+  cardsEl.innerHTML="";
+  day.cards.forEach((card,index)=>{
+    const node=createCard(card);
+    node.style.animationDelay = `${index * 80}ms`;
+    cardsEl.appendChild(node);
+  });
+  const front=document.querySelector(".frontpage");
+  if(front){
+    front.classList.remove("enter");
+    void front.offsetWidth;
+    front.classList.add("enter");
+  }
+  document.querySelectorAll(".slot").forEach(slot=>clearSlot(slot));
+  updateChosenCount();
+  setContext(null);
+}
+
+function createCard(card){
+  const div=document.createElement("div");
+  div.className="news-card enter"; div.draggable=true; div.dataset.id=card.id; div.tabIndex=0;
+  div.innerHTML=`<div class="tagrow"><span class="tag">${escapeHtml(card.displayTag || "Мир")}</span><span class="tag tag-content">${escapeHtml(card.contentTag || "Мир")}</span></div><div class="headline">${escapeHtml(card.headline)}</div><div class="mobile-actions"><button data-place="main">Главная</button><button data-place="n2">Новость 2</button><button data-place="n3">Новость 3</button><button data-place="n4">Новость 4</button></div>`;
+  div.addEventListener("dragstart",()=>{draggedId=card.id});
+  div.addEventListener("mouseenter",(e)=>setContext(card,e.currentTarget));
+  div.addEventListener("focus",(e)=>setContext(card,e.currentTarget));
+  div.addEventListener("click",(e)=>setContext(card,e.currentTarget));
+  div.addEventListener("mouseleave",()=>hideContext());
+  div.querySelectorAll(".mobile-actions button").forEach(btn=>btn.addEventListener("click",e=>{e.stopPropagation();placeCard(card.id,btn.dataset.place)}));
+  return div;
+}
+
+document.querySelectorAll(".slot").forEach(slot=>{
+  slot.addEventListener("dragover",e=>{e.preventDefault();slot.classList.add("over")});
+  slot.addEventListener("dragleave",()=>slot.classList.remove("over"));
+  slot.addEventListener("drop",e=>{e.preventDefault();slot.classList.remove("over");if(draggedId)placeCard(draggedId,slot.dataset.slot)});
+  slot.querySelector(".remove").addEventListener("click",()=>{delete placements[slot.dataset.slot];refreshSlots()});
+});
+
+function setContext(card, anchor){
+  if(!card){
+    contextPanel.classList.remove("visible");
+    contextPanel.innerHTML=`<div class="label">Дополнительно</div><div class="ctx-text">Наведите курсор на заголовок, чтобы увидеть краткое объяснение инфоповода из таблицы.</div>`;
+    return;
+  }
+  const link = card.url ? `<a href="${escapeAttr(card.url)}" target="_blank" rel="noopener">Открыть источник</a>` : "";
+  contextPanel.innerHTML=`<div class="label">Дополнительно</div><div class="ctx-text">${escapeHtml(card.context || "Контекст не указан.")}</div>${link}`;
+  positionContext(anchor);
+  contextPanel.classList.add("visible");
+}
+
+function hideContext(){
+  contextPanel.classList.remove("visible");
+}
+
+function positionContext(anchor){
+  if(!anchor) return;
+  const r = anchor.getBoundingClientRect();
+  const panelW = Math.min(310, window.innerWidth - 32);
+  const panelH = Math.min(contextPanel.offsetHeight || 260, window.innerHeight - 32);
+  let left = r.right + 12;
+  let top = r.top;
+  if(left + panelW > window.innerWidth - 16){
+    left = r.left - panelW - 12;
+    contextPanel.classList.add("left-side");
+  } else {
+    contextPanel.classList.remove("left-side");
+  }
+  if(top + panelH > window.innerHeight - 16){
+    top = Math.max(16, window.innerHeight - panelH - 16);
+  }
+  contextPanel.style.left = `${Math.max(16,left)}px`;
+  contextPanel.style.top = `${Math.max(16,top)}px`;
+}
+
+function placeCard(cardId,slotName){
+  for(const key of Object.keys(placements)){if(placements[key]===cardId)delete placements[key]}
+  placements[slotName]=cardId; hideContext(); refreshSlots();
+}
+
+function refreshSlots(){
+  const usedIds = new Set(Object.values(placements));
+  document.querySelectorAll(".slot").forEach(slot=>{
+    const slotName=slot.dataset.slot;
+    if(placements[slotName]) fillSlot(slot,findCard(placements[slotName]));
+    else clearSlot(slot);
+  });
+  document.querySelectorAll(".news-card").forEach(card=>{
+    card.classList.toggle("used", usedIds.has(card.dataset.id));
+  });
+  updateChosenCount();
+}
+
+function fillSlot(slot,card){
+  slot.classList.add("filled");
+  slot.querySelector(".slot-content").innerHTML=`<div class="tagrow"><span class="tag">${escapeHtml(card.displayTag || "Мир")}</span><span class="tag tag-content">${escapeHtml(card.contentTag || "Мир")}</span></div><div class="headline">${escapeHtml(card.headline)}</div>`;
+  slot.querySelector(".slot-content").onmouseenter=null;
+  slot.querySelector(".slot-content").onclick=null;
+  slot.querySelector(".slot-content").onmouseleave=null;
+}
+
+function clearSlot(slot){
+  slot.classList.remove("filled");
+  const label={main:"Перетащите сюда главный материал дня",n2:"Второй материал выпуска",n3:"Третий материал выпуска",n4:"Четвертый материал выпуска"}[slot.dataset.slot];
+  slot.querySelector(".slot-content").innerHTML=`<div class="placeholder">${label}</div>`;
+  slot.querySelector(".slot-content").onmouseenter=null;
+  slot.querySelector(".slot-content").onclick=null;
+}
+
+function updateChosenCount(){chosenCount.textContent=`Выбрано: ${Object.keys(placements).length}/4`}
+function findCard(id){return days[currentDay].cards.find(c=>c.id===id)}
+
+function submitRound(){
+  if(Object.keys(placements).length<4){alert("Нужно заполнить все четыре слота выпуска или пропустить день.");return}
+  const day=days[currentDay], placedIds=new Set(Object.values(placements)), excluded=day.cards.filter(c=>!placedIds.has(c.id));
+  history.push({date:day.date,placements:{...placements},excluded:excluded.map(c=>c.id)});
+  if(currentDay < days.length - 1) showPraiseTransition();
+  else goNext();
+}
+
+function showPraiseTransition(){
+  const msg = praiseMessages[currentDay % praiseMessages.length];
+  praiseTitle.textContent = msg.title;
+  praiseText.textContent = msg.text;
+  praiseText.style.display = msg.text ? "block" : "none";
+  praiseTransition.classList.add("visible");
+}
+
+function finishPraiseTransition(){
+  if(!praiseTransition.classList.contains("visible")) return;
+  praiseTransition.classList.remove("visible");
+  goNext();
+}
+
+function skipRound(){skippedDays.push(days[currentDay].date);goNext()}
+function goNext(){
+  currentDay++;
+  if(currentDay<days.length){
+    window.scrollTo({top:0,behavior:"smooth"});
+    showDayTransition(()=>renderDay());
+  } else showResult();
+}
+
+function pluralIssue(n){
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if(mod10 === 1 && mod100 !== 11) return "выпуск";
+  if(mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "выпуска";
+  return "выпусков";
+}
+
+function normalizedRegions(region){
+  const text = String(region || "").toLowerCase();
+  const result = [];
+
+  if(text.includes("газа") || text.includes("палест") || text.includes("израиль")) result.push("Газа");
+  if(text.includes("судан")) result.push("Судан");
+  if(text.includes("сомали")) result.push("Сомали");
+  if(text.includes("др конго") || text.includes("конго")) result.push("ДР Конго");
+  if(text.includes("мали") || text.includes("нигер") || text.includes("буркина") || text.includes("сахель")) result.push("Сахель");
+  if(text.includes("украин") || text.includes("росси") || text.includes("белгород")) result.push("Украина и Россия");
+  if(text.includes("сша") || text.includes("байден") || text.includes("трамп") || text.includes("белый дом") || text.includes("рубио")) result.push("США");
+  if(text.includes("великобрит")) result.push("Великобритания");
+  if(text.includes("герман")) result.push("Германия");
+  if(text.includes("китай")) result.push("Китай");
+  if(text.includes("польш")) result.push("Польша");
+  if(text.includes("ес") || text.includes("еврос")) result.push("ЕС");
+  if(text.includes("япони")) result.push("Япония");
+  if(text.includes("тунис")) result.push("Тунис");
+  if(text.includes("нигерия")) result.push("Нигерия");
+  if(text.includes("венесуэл")) result.push("Венесуэла");
+  if(text.includes("ватикан")) result.push("Ватикан");
+  if(text.includes("филиппин")) result.push("Филиппины");
+  if(text.includes("иран")) result.push("Иран");
+  if(text.includes("йемен")) result.push("Йемен");
+  if(text.includes("кения")) result.push("Кения");
+  if(text.includes("дан") || text.includes("гренланд")) result.push("Дания / Гренландия");
+
+  return [...new Set(result.length ? result : [String(region || "Мир")])];
+}
+
+function addRegionCounts(store, region){
+  normalizedRegions(region).forEach(name=>{
+    store[name] = (store[name] || 0) + 1;
+  });
+}
+
+function showResult(){
+  topbar.style.display="none"; roundControls.style.display="none"; workspace.style.display="none"; footerActions.style.display="none";
+  const mainCounts={}, excludedCounts={}, tagVisibility={}, tagExcluded={}, mainTagCounts={}, baselineVisibility={}, baselineExcluded={};
+  history.forEach(round=>{
+    const mainCard=getCardById(round.placements.main);
+    addRegionCounts(mainCounts, mainCard.region);
+    (mainCard.tags||["other"]).forEach(t=>mainTagCounts[t]=(mainTagCounts[t]||0)+1);
+
+    const day = days.find(d => d.date === round.date);
+    const availableCards = day ? day.cards : [];
+    const totalSlotWeight = Object.values(slotWeights).reduce((sum,w)=>sum+w,0);
+    const expectedExcludedCount = Math.max(0, availableCards.length - Object.keys(slotWeights).length);
+    if(availableCards.length){
+      availableCards.forEach(card=>{
+        (card.tags||["other"]).forEach(t=>{
+          baselineVisibility[t] = (baselineVisibility[t] || 0) + totalSlotWeight / availableCards.length;
+          baselineExcluded[t] = (baselineExcluded[t] || 0) + expectedExcludedCount / availableCards.length;
+        });
+      });
+    }
+
+    Object.entries(round.placements).forEach(([slot,id])=>{
+      const card=getCardById(id);
+      (card.tags||["other"]).forEach(t=>tagVisibility[t]=(tagVisibility[t]||0)+slotWeights[slot]);
+    });
+
+    round.excluded.forEach(id=>{
+      const card=getCardById(id);
+      addRegionCounts(excludedCounts, card.region);
+      (card.tags||["other"]).forEach(t=>tagExcluded[t]=(tagExcluded[t]||0)+1);
+    });
+  });
+
+  const topMain=sortCounts(mainCounts), topExcluded=sortCounts(excludedCounts), topTags=sortCounts(tagVisibility);
+  const totalMain = sumEntries(topMain);
+  const totalExcluded = sumEntries(topExcluded);
+  const totalTagVisibility = sumEntries(topTags);
+  const lead = history.length
+    ? `Вы собрали ${history.length} ${pluralIssue(history.length)} из ${days.length}. Вот что ваши выборы говорят о вас как о редакторе.`
+    : "Вы пропустили все дни. Статистика выбора не сформирована.";
+  document.getElementById("resultText").textContent=lead;
+
+  const result = chooseResultType(tagVisibility, tagExcluded, mainTagCounts, history.length, baselineVisibility, baselineExcluded);
+  const chosen = resultTypes[result.key] || resultTypes.balanced;
+
+  if(history.length){
+    document.getElementById("profileCard").innerHTML =
+      `<div class="profile-type">Вы — ${escapeHtml(chosen.type)}</div>`+
+      `<div class="profile-title">${escapeHtml(chosen.title)}</div>`+
+      `<div class="profile-text">${escapeHtml(chosen.text)}</div>`;
+  } else {
+    document.getElementById("profileCard").innerHTML =
+      `<div class="profile-title">Выпуск сам себя не соберет!</div>`+
+      `<div class="profile-text">Каждый ваш выбор фиксируется по нескольким параметрам: регион, тема, тип повестки. Гуманитарная ситуация, безопасность, дипломатия, экономика, роль США и международных институтов. Из этого складывается ваш редакционный портрет. Но сначала нужно собрать хотя бы один выпуск.</div>`;
+  }
+
+  const detailsBlock = document.querySelector("#result details");
+  detailsBlock.style.display = "block";
+
+  renderList("mainStats",toPercentEntries(topMain, totalMain));
+  renderList("excludedStats",toPercentEntries(topExcluded, totalExcluded));
+  renderList("tagStats",toPercentEntries(topTags.map(([k,v])=>[tagLabels[k]||k,v]), totalTagVisibility, true));
+  renderList("skippedStats",skippedDays.map(d=>[d,1]),true);
+  document.getElementById("result").style.display="block";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function chooseResultType(visibility, excluded, mainTags, rounds, baselineVisibility={}, baselineExcluded={}){
+  if(!rounds) return {key:"balanced", why:"Нет отправленных выпусков."};
+
+  const totalVisibility = Object.values(visibility).reduce((sum,v)=>sum+Number(v||0),0) || 1;
+  const totalMain = Object.values(mainTags).reduce((sum,v)=>sum+Number(v||0),0) || 1;
+  const allTypeKeys = Object.keys(resultTypes);
+
+  const v = (tag)=>Number(visibility[tag]||0);
+  const e = (tag)=>Number(excluded[tag]||0);
+  const b = (tag)=>Number(baselineVisibility[tag]||0);
+  const be = (tag)=>Number(baselineExcluded[tag]||0);
+  const share = (tag)=>v(tag)/totalVisibility;
+  const mainShare = (tag)=>Number(mainTags[tag]||0)/totalMain;
+  const lift = (tag)=> b(tag) > 0 ? v(tag)/b(tag) : 0;
+  const excludedLift = (tag)=> be(tag) > 0 ? e(tag)/be(tag) : 0;
+
+  const groupActual = (tags)=>tags.reduce((sum,t)=>sum+v(t),0);
+  const groupBaseline = (tags)=>tags.reduce((sum,t)=>sum+b(t),0);
+  const groupShare = (tags)=>groupActual(tags)/totalVisibility;
+  const groupLift = (tags)=>{
+    const base = groupBaseline(tags);
+    return base > 0 ? groupActual(tags)/base : 0;
+  };
+
+  const recognizableTags = ["ukraine_russia","gaza","us_related"];
+  const slowTags = ["humanitarian","economy","diplomacy"];
+  const geopoliticsTags = ["diplomacy","institutions","us_related"];
+
+  const securityShare = share("security");
+  const humanitarianShare = share("humanitarian");
+  const africaShare = share("africa");
+  const recognizableShare = groupShare(recognizableTags);
+  const slowShare = groupShare(slowTags);
+  const geopoliticalShare = groupShare(geopoliticsTags);
+
+  // Баланс считается отдельно: это не «все понемногу», а отсутствие жесткой доминанты
+  // при заметном присутствии нескольких крупных направлений.
+  const sortedShares = sortCounts(visibility).map(([tag,val])=>[tag, val/totalVisibility]);
+  const topShare = sortedShares[0]?.[1] || 0;
+  const coverage = ["africa","gaza","ukraine_russia","humanitarian","security","diplomacy","institutions"].filter(tag=>share(tag) >= 0.08).length;
+  const balancedScore = Math.max(0, 1.35 - topShare * 2.1) + coverage * 0.13;
+
+  const scores = {
+    balanced: balancedScore,
+    global_south: lift("africa") * 0.72 + africaShare * 1.15 + mainShare("africa") * 0.35,
+    recognizable_wars: groupLift(recognizableTags) * 0.58 + recognizableShare * 0.95 + (mainShare("ukraine_russia") + mainShare("gaza")) * 0.22,
+    humanitarian: lift("humanitarian") * 0.72 + humanitarianShare * 1.05 + mainShare("humanitarian") * 0.48,
+    security: lift("security") * 0.68 + securityShare * 1.08 + mainShare("security") * 0.34,
+    geopolitics: groupLift(geopoliticsTags) * 0.55 + geopoliticalShare * 0.92 + (mainShare("diplomacy") + mainShare("institutions") + mainShare("us_related")) * 0.22,
+    bottom_up: lift("humanitarian") * 0.44 + humanitarianShare * 0.72 + mainShare("humanitarian") * 0.9 - securityShare * 0.18,
+    priorities: excludedLift("africa") * 0.62 + recognizableShare * 0.45 + Math.max(0, 0.26 - africaShare) * 1.15,
+    washington: lift("us_related") * 0.78 + share("us_related") * 1.12 + mainShare("us_related") * 0.42,
+    institutions: lift("institutions") * 0.78 + share("institutions") * 1.05 + mainShare("institutions") * 0.42,
+    breaking: lift("security") * 0.52 + securityShare * 0.95 + Math.max(0, securityShare - slowShare) * 0.95,
+    long_crises: groupLift(slowTags) * 0.52 + slowShare * 0.98 + Math.max(0, slowShare - securityShare) * 0.9
+  };
+
+  // Небольшие ограничения защищают от странных результатов на 1–2 случайных выборах,
+  // но не превращают механику обратно в жесткую цепочку условий.
+  if(africaShare < 0.12) scores.global_south *= 0.55;
+  if(recognizableShare < 0.18) scores.recognizable_wars *= 0.62;
+  if(humanitarianShare < 0.12) { scores.humanitarian *= 0.58; scores.bottom_up *= 0.62; }
+  if(securityShare < 0.16) { scores.security *= 0.58; scores.breaking *= 0.58; }
+  if(geopoliticalShare < 0.18) scores.geopolitics *= 0.62;
+  if(share("us_related") < 0.08) scores.washington *= 0.5;
+  if(share("institutions") < 0.08) scores.institutions *= 0.5;
+  if(slowShare < 0.20) scores.long_crises *= 0.62;
+  if(excludedLift("africa") < 1.05) scores.priorities *= 0.55;
+
+  const winner = Object.entries(scores)
+    .filter(([key])=>allTypeKeys.includes(key))
+    .sort((a,b)=>b[1]-a[1])[0];
+
+  return {key:winner?.[0] || "balanced", scores};
+}
+
+function toggleAllTypes(){
+  const panel = document.getElementById("allTypesPanel");
+  const btn = document.getElementById("showTypesBtn");
+  if(!btn) return;
+  if(!panel.classList.contains("visible")){
+    renderAllTypes();
+    panel.classList.add("visible");
+    btn.textContent = "Скрыть типажи";
+  } else {
+    panel.classList.remove("visible");
+    btn.textContent = "Посмотреть все типажи";
+  }
+}
+
+function capitalizeFirst(s){
+  s = String(s || "");
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
+function renderAllTypes(){
+  const grid = document.getElementById("typesGrid");
+  if(grid.dataset.rendered === "1") return;
+  grid.innerHTML = Object.values(resultTypes).map(item =>
+    `<li>${escapeHtml(capitalizeFirst(item.type))}</li>`
+  ).join("");
+  grid.dataset.rendered = "1";
+}
+
+function getCardById(id){for(const day of days){const found=day.cards.find(c=>c.id===id);if(found)return found}}
+function sortCounts(obj){return Object.entries(obj).sort((a,b)=>b[1]-a[1])}
+function sumEntries(entries){return entries.reduce((sum, [,count])=>sum+Number(count||0),0)}
+function formatPercent(value){
+  const rounded = Math.round(value * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1).replace(".",",");
+}
+function toPercentEntries(entries,total,forceHundred=false){
+  if(!entries.length || !total) return entries;
+  const mapped = entries.map(([name,count])=>{
+    const percent = (Number(count||0) / total) * 100;
+    return [name, `${count} / ${formatPercent(percent)}%`];
+  });
+  return mapped;
+}
+function renderList(id,entries,dates=false){
+  const ul=document.getElementById(id);
+  if(!entries.length){ul.innerHTML="<li>Нет данных</li>";return}
+  ul.innerHTML=entries.map(([name,count])=>dates?`<li>${escapeHtml(name)}</li>`:`<li>${escapeHtml(name)}: ${escapeHtml(count)}</li>`).join("");
+}
+function typo(s){
+  return String(s||"")
+    .replace(/\s+—\s+/g,"\u00A0—\u00A0")
+    .replace(/(^|[\s(«„])([вксуоаия])\s+/gi,"$1$2\u00A0")
+    .replace(/(^|[\s(«„])(во|ко|со|об|от|до|за|на|по|из|не|ни|но|же|ли|бы)\s+/gi,"$1$2\u00A0")
+    .replace(/(\d)\s+(тыс\.|млн|млрд|руб\.|долларов|евро|%)/gi,"$1\u00A0$2")
+    .replace(/№\s+/g,"№\u00A0");
+}
+function escapeHtml(s){return typo(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
+function escapeAttr(s){return escapeHtml(s).replace(/`/g,"&#096;")}
+
+function typographStaticTextNodes(){
+  const skip = new Set(["SCRIPT","STYLE","TEXTAREA","INPUT","CODE","PRE"]);
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+    acceptNode(node){
+      if(!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      let p = node.parentNode;
+      while(p){
+        if(skip.has(p.nodeName)) return NodeFilter.FILTER_REJECT;
+        p = p.parentNode;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  const nodes = [];
+  while(walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(n => n.nodeValue = typo(n.nodeValue));
+}
+document.addEventListener("DOMContentLoaded", typographStaticTextNodes);
+</script>
+</body>
+</html>
